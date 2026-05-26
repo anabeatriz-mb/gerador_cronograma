@@ -234,59 +234,59 @@
         }
 
         function mostrarResultado(cronograma) {
-            const ordem = ["domingo", "segunda", "terça", "terca", "quarta", "quinta", "sexta", "sábado", "sabado"]
-            const div = document.getElementById("cronograma")
-            
-            div.innerHTML = `
-                <div class="grid sm:grid-cols-2 gap-4">
-                    ${ordem
-                        .filter(dia => dia in cronograma)
-                        .map(dia => {
-                            let texto = cronograma[dia]
-                            let isEmpty = !texto || texto.trim() === ""
-                            
-                            if (isEmpty) {
-                                texto = "Não há atividades para esse dia"
-                            }
+    const ordem = ["domingo", "segunda", "terça", "terca", "quarta", "quinta", "sexta", "sábado", "sabado"]
+    const div = document.getElementById("cronograma")
+    
+    div.innerHTML = `
+        <div class="grid sm:grid-cols-2 gap-4">
+            ${ordem
+                .filter(dia => dia in cronograma)
+                .map(dia => {
+                    let texto = cronograma[dia]
+                    let isEmpty = !texto || texto.trim() === ""
+                    
+                    if (isEmpty) {
+                        texto = "Não há atividades para esse dia"
+                    }
 
-                            let tarefasHtml = ""
-                            if (!isEmpty) {
-                                // Divide o parágrafo longo usando as barras verticais "|"
-                                const tarefas = texto.split("|").map(t => t.trim())
-                                tarefasHtml = `
-                                    <ul class="mt-4 space-y-3">
-                                        ${tarefas.map(tarefa => `
-                                            <li class="text-xs leading-relaxed font-medium text-slate-600 flex items-start gap-2 bg-slate-50/50 p-2.5 rounded-xl border border-slate-100">
-                                                <span class="w-1.5 h-1.5 bg-blue-500 rounded-full mt-1.5 shrink-0"></span>
-                                                <span>${tarefa}</span>
-                                            </li>
-                                        `).join("")}
-                                    </ul>
-                                `
-                            } else {
-                                tarefasHtml = `
-                                    <p class="mt-4 text-xs leading-relaxed font-medium text-slate-400 italic">
-                                        ${texto}
-                                    </p>
-                                `
-                            }
+                    // Se não estiver vazio, divide o texto onde tiver "|" e limpa os espaços
+                    let tarefasHtml = ""
+                    if (!isEmpty) {
+                        const tarefas = texto.split("|").map(t => t.trim())
+                        tarefasHtml = `
+                            <ul class="mt-4 space-y-3">
+                                ${tarefas.map(tarefa => `
+                                    <li class="text-xs leading-relaxed font-medium text-slate-600 flex items-start gap-2 bg-slate-50/50 p-2.5 rounded-xl border border-slate-100">
+                                        <span class="w-1.5 h-1.5 bg-blue-500 rounded-full mt-1.5 shrink-0"></span>
+                                        <span>${tarefa}</span>
+                                    </li>
+                                `).join("")}
+                            </ul>
+                        `
+                    } else {
+                        tarefasHtml = `
+                            <p class="mt-4 text-xs leading-relaxed font-medium text-slate-400 italic">
+                                ${texto}
+                            </p>
+                        `
+                    }
 
-                            return `
-                                <div class="border rounded-2xl p-5 shadow-sm transition-all duration-200 hover:shadow-md bg-white ${isEmpty ? 'border-slate-100 opacity-60' : 'border-slate-200/80 bg-gradient-to-br from-white to-slate-50/40' }">
-                                    <div class="flex items-center justify-between border-b pb-3 ${isEmpty ? 'border-slate-100' : 'border-slate-100'}">
-                                        <h3 class="font-bold text-sm tracking-wide capitalize ${isEmpty ? 'text-slate-400' : 'text-slate-900'}">
-                                            ${dia}
-                                        </h3>
-                                        <span class="w-2 h-2 rounded-full ${isEmpty ? 'bg-slate-300' : 'bg-emerald-500'}"></span>
-                                    </div>
-                                    ${tarefasHtml}
-                                </div>
-                            `
-                        }).join("")}
-                </div>
-            `
-            document.getElementById("resultado").classList.remove("hidden")
-        }
+                    return `
+                        <div class="border rounded-2xl p-5 shadow-sm transition-all duration-200 hover:shadow-md bg-white ${isEmpty ? 'border-slate-100 opacity-60' : 'border-slate-200/80 bg-gradient-to-br from-white to-slate-50/40' }">
+                            <div class="flex items-center justify-between border-b pb-3 ${isEmpty ? 'border-slate-100' : 'border-slate-100'}">
+                                <h3 class="font-bold text-sm tracking-wide capitalize ${isEmpty ? 'text-slate-400' : 'text-slate-900'}">
+                                    ${dia}
+                                </h3>
+                                <span class="w-2 h-2 rounded-full ${isEmpty ? 'bg-slate-300' : 'bg-emerald-500'}"></span>
+                            </div>
+                            ${tarefasHtml}
+                        </div>
+                    `
+                }).join("")}
+        </div>
+    `
+    document.getElementById("resultado").classList.remove("hidden")
+}
     </script>
 </body>
 
