@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Planner Inteligente</title>
+    <title>StudyFlow AI</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,20 +14,6 @@
         body {
             background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
             font-family: 'Plus Jakarta Sans', sans-serif;
-        }
-        /* Customização sutil da barra de rolagem do resultado */
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
         }
     </style>
 </head>
@@ -56,7 +42,7 @@
                         <div class="mt-6 space-y-3">
                             <div class="p-4 rounded-2xl bg-white border border-slate-200/60 shadow-sm text-xs text-slate-600">
                                 <span class="font-semibold text-slate-900 block mb-1"> Dica de Ouro</span>
-                                Quanto menos matérias você selecionar, mais equilibrado e focado será o seu plano.
+                                Quanto menos matérias concomitantes você selecionar, mais equilibrado e focado será o seu plano.
                             </div>
                         </div>
 
@@ -127,11 +113,16 @@
                         </div>
 
                         <div id="resultado-placeholder" class="flex-1 flex flex-col items-center justify-center text-center p-8 transition-all">
-                            <div class="w-16 h-16 bg-slate-50 text-slate-300 border border-slate-100 rounded-2xl flex items-center justify-center mb-4">
+                            <div id="placeholder-icon" class="w-16 h-16 bg-slate-50 text-slate-300 border border-slate-100 rounded-2xl flex items-center justify-center mb-4">
                                 <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
                             </div>
-                            <h3 class="text-sm font-semibold text-slate-700">Ainda não há nada aqui</h3>
-                            <p class="text-xs text-slate-400 max-w-xs mt-1">Preencha os dados à esquerda e clique em "Otimizar" para estruturar sua semana.</p>
+
+                            <div id="placeholder-loading" class="hidden mb-4">
+                                <div class="w-12 h-12 border-4 border-blue-100 border-t-blue-500 rounded-full animate-spin"></div>
+                            </div>
+
+                            <h3 id="placeholder-title" class="text-sm font-semibold text-slate-700">Ainda não há nada aqui</h3>
+                            <p id="placeholder-text" class="text-xs text-slate-400 max-w-xs mt-1">Preencha os dados à esquerda e clique em "Otimizar" para estruturar sua semana.</p>
                         </div>
 
                         <div id="resultado" class="hidden flex-1 mt-6 pr-2">
@@ -149,7 +140,7 @@
     </div>
 
     <script>
-        const API_URL = "https://geradorpessoal-backend-fek8.vercel.app/generate"
+        const API_URL = "http://127.0.0.1:5000/generate"
 
         function mostrarStatus(mensagem, tipo) {
             const div = document.getElementById("statusMessage")
@@ -183,7 +174,7 @@
                 .filter(Boolean)
 
             const horas = document.getElementById("horas").value
-            const periodo = document.getElementById("periodo").value // <-- Resgatando o valor do select
+            const periodo = document.getElementById("periodo").value
             const dias = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'))
                 .map(d => d.value)
 
@@ -198,6 +189,14 @@
             
             mostrarStatus("Processando variáveis e gerando cronograma...", "ok")
 
+            // Ativa o estado de carregamento visual
+            document.getElementById("resultado").classList.add("hidden")
+            document.getElementById("resultado-placeholder").classList.remove("hidden")
+            document.getElementById("placeholder-icon").classList.add("hidden")
+            document.getElementById("placeholder-loading").classList.remove("hidden")
+            document.getElementById("placeholder-title").innerText = "Gerando seu cronograma..."
+            document.getElementById("placeholder-text").innerText = "A inteligência artificial está organizando seus horários perfeitos. Aguarde um instante."
+
             try {
                 const response = await fetch(API_URL, {
                     method: "POST",
@@ -207,77 +206,87 @@
                     body: JSON.stringify({
                         materias,
                         horas_por_dia: Number(horas),
-                        periodo, // <-- Enviando o período no corpo da requisição JSON
+                        periodo,
                         dias_disponiveis: dias
                     })
                 })
                 const data = await response.json()
+                
                 if (data.status === "success") {
                     document.getElementById("resultado-placeholder").classList.add("hidden")
                     mostrarResultado(data.cronograma)
                     document.getElementById("statusMessage").classList.add("hidden")
                 } else {
                     mostrarStatus(data.message, "erro")
+                    restaurarPlaceholder()
                 }
             } catch {
                 mostrarStatus("Erro ao conectar com o servidor da IA. Verifique se a API Flask/Python está rodando.", "erro")
+                restaurarPlaceholder()
             }
         }
 
+        function restaurarPlaceholder() {
+            document.getElementById("placeholder-icon").classList.remove("hidden")
+            document.getElementById("placeholder-loading").classList.add("hidden")
+            document.getElementById("placeholder-title").innerText = "Ainda não há nada aqui"
+            document.getElementById("placeholder-text").innerText = "Preencha os dados à esquerda e clique em \"Otimizar\" para estruturar sua semana."
+        }
+
         function mostrarResultado(cronograma) {
-    const ordem = ["domingo", "segunda", "terça", "terca", "quarta", "quinta", "sexta", "sábado", "sabado"]
-    const div = document.getElementById("cronograma")
-    
-    div.innerHTML = `
-        <div class="grid sm:grid-cols-2 gap-4">
-            ${ordem
-                .filter(dia => dia in cronograma)
-                .map(dia => {
-                    let texto = cronograma[dia]
-                    let isEmpty = !texto || texto.trim() === ""
-                    
-                    if (isEmpty) {
-                        texto = "Não há atividades para esse dia"
-                    }
+            const ordem = ["domingo", "segunda", "terça", "terca", "quarta", "quinta", "sexta", "sábado", "sabado"]
+            const div = document.getElementById("cronograma")
+            
+            div.innerHTML = `
+                <div class="grid sm:grid-cols-2 gap-4">
+                    ${ordem
+                        .filter(dia => dia in cronograma)
+                        .map(dia => {
+                            let texto = cronograma[dia]
+                            let isEmpty = !texto || texto.trim() === ""
+                            
+                            if (isEmpty) {
+                                texto = "Não há atividades para esse dia"
+                            }
 
-                    // Se não estiver vazio, divide o texto onde tiver "|" e limpa os espaços
-                    let tarefasHtml = ""
-                    if (!isEmpty) {
-                        const tarefas = texto.split("|").map(t => t.trim())
-                        tarefasHtml = `
-                            <ul class="mt-4 space-y-3">
-                                ${tarefas.map(tarefa => `
-                                    <li class="text-xs leading-relaxed font-medium text-slate-600 flex items-start gap-2 bg-slate-50/50 p-2.5 rounded-xl border border-slate-100">
-                                        <span class="w-1.5 h-1.5 bg-blue-500 rounded-full mt-1.5 shrink-0"></span>
-                                        <span>${tarefa}</span>
-                                    </li>
-                                `).join("")}
-                            </ul>
-                        `
-                    } else {
-                        tarefasHtml = `
-                            <p class="mt-4 text-xs leading-relaxed font-medium text-slate-400 italic">
-                                ${texto}
-                            </p>
-                        `
-                    }
+                            let tarefasHtml = ""
+                            if (!isEmpty) {
+                                // Divide o parágrafo longo usando as barras verticais "|"
+                                const tarefas = texto.split("|").map(t => t.trim())
+                                tarefasHtml = `
+                                    <ul class="mt-4 space-y-3">
+                                        ${tarefas.map(tarefa => `
+                                            <li class="text-xs leading-relaxed font-medium text-slate-600 flex items-start gap-2 bg-slate-50/50 p-2.5 rounded-xl border border-slate-100">
+                                                <span class="w-1.5 h-1.5 bg-blue-500 rounded-full mt-1.5 shrink-0"></span>
+                                                <span>${tarefa}</span>
+                                            </li>
+                                        `).join("")}
+                                    </ul>
+                                `
+                            } else {
+                                tarefasHtml = `
+                                    <p class="mt-4 text-xs leading-relaxed font-medium text-slate-400 italic">
+                                        ${texto}
+                                    </p>
+                                `
+                            }
 
-                    return `
-                        <div class="border rounded-2xl p-5 shadow-sm transition-all duration-200 hover:shadow-md bg-white ${isEmpty ? 'border-slate-100 opacity-60' : 'border-slate-200/80 bg-gradient-to-br from-white to-slate-50/40' }">
-                            <div class="flex items-center justify-between border-b pb-3 ${isEmpty ? 'border-slate-100' : 'border-slate-100'}">
-                                <h3 class="font-bold text-sm tracking-wide capitalize ${isEmpty ? 'text-slate-400' : 'text-slate-900'}">
-                                    ${dia}
-                                </h3>
-                                <span class="w-2 h-2 rounded-full ${isEmpty ? 'bg-slate-300' : 'bg-emerald-500'}"></span>
-                            </div>
-                            ${tarefasHtml}
-                        </div>
-                    `
-                }).join("")}
-        </div>
-    `
-    document.getElementById("resultado").classList.remove("hidden")
-}
+                            return `
+                                <div class="border rounded-2xl p-5 shadow-sm transition-all duration-200 hover:shadow-md bg-white ${isEmpty ? 'border-slate-100 opacity-60' : 'border-slate-200/80 bg-gradient-to-br from-white to-slate-50/40' }">
+                                    <div class="flex items-center justify-between border-b pb-3 ${isEmpty ? 'border-slate-100' : 'border-slate-100'}">
+                                        <h3 class="font-bold text-sm tracking-wide capitalize ${isEmpty ? 'text-slate-400' : 'text-slate-900'}">
+                                            ${dia}
+                                        </h3>
+                                        <span class="w-2 h-2 rounded-full ${isEmpty ? 'bg-slate-300' : 'bg-emerald-500'}"></span>
+                                    </div>
+                                    ${tarefasHtml}
+                                </div>
+                            `
+                        }).join("")}
+                </div>
+            `
+            document.getElementById("resultado").classList.remove("hidden")
+        }
     </script>
 </body>
 
